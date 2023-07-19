@@ -95,7 +95,7 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="7dp"
             android:background="@android:color/transparent"
-            android:hint="............"
+            android:hint="........"
             android:inputType="textPassword"
             android:textColor="@color/black"
             android:textColorHint="@color/light_gray"

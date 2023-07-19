@@ -22,4 +22,10 @@
     <string name="txt_description_hint">Write your description</string>
     <string name="txt_submit">Submit</string>
     <string name="add_note">Add Note</string>
+    <string name="notes">Notes</string>
+    <string name="edit_note">Edit Note</string>
+    <string name="Desc">Nothing</string>
+    <string name="todo">Nothing</string>
+    <string name="title_sample">How to draw a professional wireframe?</string>
+    <string name="description_sample">For wireFrame, you need to have access to the tools required. You need to check the description of the tool to understand the underpinnings of the tool</string>
 </resources>

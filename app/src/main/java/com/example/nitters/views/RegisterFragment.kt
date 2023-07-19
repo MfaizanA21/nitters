@@ -1,4 +1,4 @@
-package com.example.nitters
+package com.example.nitters.views
 
 import android.os.Bundle
 import androidx.fragment.app.Fragment
@@ -6,15 +6,13 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.viewModels
-import androidx.lifecycle.Observer
 import androidx.navigation.fragment.findNavController
+import com.example.nitters.R
 import com.example.nitters.databinding.FragmentRegisterBinding
 import com.example.nitters.di.utils.NetworkResult
-import com.example.nitters.di.utils.TokenManager
+import com.example.nitters.fireViewModel.FireAuthViewModel
 import com.example.nitters.models.UserRequest
-import com.example.nitters.viewModels.AuthViewModel
 import dagger.hilt.android.AndroidEntryPoint
-import javax.inject.Inject
 
 @AndroidEntryPoint
 class RegisterFragment : Fragment() {
@@ -22,22 +20,14 @@ class RegisterFragment : Fragment() {
     private var _binding: FragmentRegisterBinding? = null
     private val binding get() = _binding!!
 
-    private val authViewModel by viewModels<AuthViewModel>()
-
-    @Inject
-    lateinit var tokenManager: TokenManager //when signup/login call success we get token
+    private val fireAuthViewModel by viewModels<FireAuthViewModel>()
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
-    ): View? {
+    ): View {
 
         _binding = FragmentRegisterBinding.inflate(inflater, container, false)
-
-
-        if(tokenManager.getToken() !=null) {
-            findNavController().navigate(R.id.action_registerFragment_to_mainFragment)
-        }
 
         return binding.root
     }
@@ -47,15 +37,32 @@ class RegisterFragment : Fragment() {
 
         binding.btnSignUp.setOnClickListener {
 
-            val validationResult = validateUserInput()
-
-            if(validationResult.first){
-
-
-                authViewModel.registerUser(getUserRequest())
+            val email = binding.txtEmail.text.toString()
+            val password = binding.txtPassword.text.toString()
+            val username = binding.txtUsername.text.toString()
+            val validateInput = validate()
+            if(validateInput.first) {
+                fireAuthViewModel.signup(username, email, password)
+            } else {
+                binding.txtError.text = validateInput.second
             }
-            else {
-                binding.txtError.text = validationResult.second
+
+
+            fireAuthViewModel.signupFlow.observe(viewLifecycleOwner) {
+                when(it) {
+                    is NetworkResult.Success -> {
+                        findNavController().navigate(R.id.action_registerFragment_to_mainFragment)
+                    }
+                    is NetworkResult.Error -> {
+                        binding.txtError.text = it.message
+                    }
+                    is NetworkResult.Loading -> {
+                        TODO()
+                        //Loading Bar
+                    }
+
+                    else -> {}
+                }
             }
 
         }
@@ -63,8 +70,6 @@ class RegisterFragment : Fragment() {
         binding.btnLogin.setOnClickListener {
             findNavController().navigate(R.id.action_registerFragment_to_loginFragment)
         }
-
-        bindObserver()
 
     }
 
@@ -76,30 +81,9 @@ class RegisterFragment : Fragment() {
         return UserRequest(emailAddress, username, password)
     }
 
-    private fun validateUserInput(): Pair<Boolean, String> {
+    private fun validate(): Pair<Boolean, String> {
         val userRequest = getUserRequest()
-        return authViewModel.validateCredential(userRequest.username, userRequest.email, userRequest.password, false)
-
-    }
-
-    private fun bindObserver() {
-
-        authViewModel.userResponseLiveData.observe(viewLifecycleOwner, Observer{
-            when(it){
-                is  NetworkResult.Success -> {
-                    tokenManager.saveToken(it.data!!.token)
-
-                    findNavController().navigate(R.id.action_registerFragment_to_mainFragment)
-                }
-                is  NetworkResult.Error -> {
-                    binding.txtError.text = it.message
-                }
-                is NetworkResult.Loading -> {
-                    //binding.progressBar.isVisible = true
-                }
-            }
-        })
-
+        return fireAuthViewModel.validation(userRequest.username, userRequest.email, userRequest.password, false)
     }
 
     override fun onDestroy() {
